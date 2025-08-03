@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gaussian Splatting Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+        
+        #controls h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        #fileLabel {
+            display: block;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        #fileLabel:hover {
+            border-color: #5a6fd8;
+            background: linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%);
+            transform: translateY(-2px);
+        }
+        
+        .splat-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .splat-item {
+            padding: 12px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .splat-item:hover {
+            background: #e8ecff;
+            transform: translateX(5px);
+        }
+        
+        .splat-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #5a6fd8 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        #instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            max-width: 250px;
+        }
+        
+        #instructions h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        #instructions ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        
+        #instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h2>3D Gaussian Splatting Viewer</h2>
+            
+            <div class="control-group">
+                <label for="fileInput">选择 .splat 文件:</label>
+                <input type="file" id="fileInput" accept=".splat" multiple>
+                <label for="fileInput" id="fileLabel">📁 点击选择文件或拖拽到此处</label>
+            </div>
+            
+            <div class="control-group">
+                <label>预设模型:</label>
+                <div class="splat-list" id="splatList">
+                    <div class="splat-item" data-file="bonsai-7k-mini.splat">🌸 Bonsai (7K)</div>
+                    <div class="splat-item" data-file="test.splat">🧪 Test Model</div>
+                    <div class="splat-item" data-file="origin.splat">🎯 Origin Model</div>
+                    <div class="splat-item" data-file="rotation.splat">🔄 Rotation Model</div>
+                    <div class="splat-item" data-file="r2.splat">⚡ R2 Model</div>
+                    <div class="splat-item" data-file="benz.splat">🚗 Benz Model</div>
+                    <div class="splat-item" data-file="motor_benz.splat">🏍️ Motor Benz</div>
+                    <div class="splat-item" data-file="motor2.splat">🏍️ Motor 2</div>
+                    <div class="splat-item" data-file="point_cloud.splat">☁️ Point Cloud</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="instructions">
+            <h3>操作说明</h3>
+            <ul>
+                <li>🖱️ 鼠标拖拽：旋转视角</li>
+                <li>🔍 滚轮：缩放</li>
+                <li>📱 支持触摸操作</li>
+            </ul>
+        </div>
+        
+        <div id="info">
+            <div>当前模型: <span id="currentModel">无</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+            <div>顶点数: <span id="vertexCount">0</span></div>
+        </div>
+        
+        <div id="loading">
+            <span class="spinner"></span>
+            正在加载模型，请稍候...
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
+                "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.8/spark.module.js"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import * as THREE from "three";
+        import { SplatMesh } from "@sparkjsdev/spark";
+
+        // 场景设置
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        
+        // 相机设置
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 5);
+        
+        // 渲染器设置
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('container').appendChild(renderer.domElement);
+        
+        // 添加环境光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        // 添加方向光
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 5);
+        scene.add(directionalLight);
+        
+        // 变量
+        let currentSplat = null;
+        let frameCount = 0;
+        let lastTime = 0;
+        let fps = 0;
+        
+        // DOM 元素
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const splatList = document.getElementById('splatList');
+        const loading = document.getElementById('loading');
+        const currentModelSpan = document.getElementById('currentModel');
+        const fpsSpan = document.getElementById('fps');
+        const vertexCountSpan = document.getElementById('vertexCount');
+        
+        // 文件拖拽功能
+        fileLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileLabel.style.borderColor = '#5a6fd8';
+            fileLabel.style.background = 'linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%)';
+        });
+        
+        fileLabel.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            fileLabel.style.borderColor = '#667eea';
+            fileLabel.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%)';
+        });
+        
+        fileLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileLabel.style.borderColor = '#667eea';
+            fileLabel.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%)';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                loadSplatFile(files[0]);
+            }
+        });
+        
+        // 文件选择
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                loadSplatFile(e.target.files[0]);
+            }
+        });
+        
+        // 预设模型点击
+        splatList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('splat-item')) {
+                // 移除之前的active类
+                document.querySelectorAll('.splat-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // 添加active类到当前项
+                e.target.classList.add('active');
+                
+                const fileName = e.target.dataset.file;
+                loadSplatFileByName(fileName);
+            }
+        });
+        
+        // 加载splat文件
+        async function loadSplatFile(file) {
+            try {
+                loading.style.display = 'block';
+                
+                // 移除之前的模型
+                if (currentSplat) {
+                    scene.remove(currentSplat);
+                }
+                
+                // 创建文件URL
+                const fileURL = URL.createObjectURL(file);
+                
+                // 创建新的SplatMesh
+                currentSplat = new SplatMesh({ url: fileURL });
+                currentSplat.position.set(0, 0, 0);
+                
+                // 添加到场景
+                scene.add(currentSplat);
+                
+                // 更新信息
+                currentModelSpan.textContent = file.name;
+                
+                // 自动调整相机位置
+                setTimeout(() => {
+                    if (currentSplat && currentSplat.geometry) {
+                        vertexCountSpan.textContent = currentSplat.geometry.attributes.position.count.toLocaleString();
+                        
+                        const box = new THREE.Box3().setFromObject(currentSplat);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const distance = maxDim * 2;
+                        camera.position.set(distance, distance, distance);
+                        camera.lookAt(0, 0, 0);
+                    }
+                }, 100);
+                
+                loading.style.display = 'none';
+                
+            } catch (error) {
+                console.error('加载splat文件失败:', error);
+                loading.style.display = 'none';
+                alert('加载文件失败: ' + error.message);
+            }
+        }
+        
+        // 加载预设模型
+        async function loadSplatFileByName(fileName) {
+            try {
+                loading.style.display = 'block';
+                
+                // 移除之前的模型
+                if (currentSplat) {
+                    scene.remove(currentSplat);
+                }
+                
+                // 创建新的SplatMesh
+                currentSplat = new SplatMesh({ url: fileName });
+                currentSplat.position.set(0, 0, 0);
+                
+                // 添加到场景
+                scene.add(currentSplat);
+                
+                // 更新信息
+                currentModelSpan.textContent = fileName;
+                
+                // 自动调整相机位置
+                setTimeout(() => {
+                    if (currentSplat && currentSplat.geometry) {
+                        vertexCountSpan.textContent = currentSplat.geometry.attributes.position.count.toLocaleString();
+                        
+                        const box = new THREE.Box3().setFromObject(currentSplat);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const distance = maxDim * 2;
+                        camera.position.set(distance, distance, distance);
+                        camera.lookAt(0, 0, 0);
+                    }
+                }, 100);
+                
+                loading.style.display = 'none';
+                
+            } catch (error) {
+                console.error('加载splat文件失败:', error);
+                loading.style.display = 'none';
+                alert('加载文件失败: ' + error.message);
+            }
+        }
+        
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // 鼠标控制
+        let isMouseDown = false;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const deltaX = e.clientX - mouseX;
+                const deltaY = e.clientY - mouseY;
+                
+                // 旋转相机
+                const spherical = new THREE.Spherical();
+                spherical.setFromVector3(camera.position);
+                spherical.theta -= deltaX * 0.01;
+                spherical.phi += deltaY * 0.01;
+                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                
+                camera.position.setFromSpherical(spherical);
+                camera.lookAt(0, 0, 0);
+                
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            }
+        });
+        
+        renderer.domElement.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+        
+        // 滚轮缩放
+        renderer.domElement.addEventListener('wheel', (e) => {
+            const zoomSpeed = 0.1;
+            const direction = e.deltaY > 0 ? 1 : -1;
+            camera.position.multiplyScalar(1 + direction * zoomSpeed);
+        });
+        
+        // 触摸控制
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        });
+        
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+            
+            // 旋转相机
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position);
+            spherical.theta -= deltaX * 0.01;
+            spherical.phi += deltaY * 0.01;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+            
+            camera.position.setFromSpherical(spherical);
+            camera.lookAt(0, 0, 0);
+            
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        });
+        
+        // 动画循环
+        function animate(time) {
+            requestAnimationFrame(animate);
+            
+            // 计算FPS
+            frameCount++;
+            if (time - lastTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (time - lastTime));
+                fpsSpan.textContent = fps;
+                frameCount = 0;
+                lastTime = time;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // 启动动画
+        animate(0);
+        
+        // 默认加载第一个模型
+        setTimeout(() => {
+            const firstItem = document.querySelector('.splat-item');
+            if (firstItem) {
+                firstItem.classList.add('active');
+                loadSplatFileByName(firstItem.dataset.file);
+            }
+        }, 100);
+    </script>
+</body>
+</html>
+</html>
