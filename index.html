@@ -3,134 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Gaussian Splatting Viewer</title>
+    <title>自动驾驶场景三维编辑器</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: 'Arial', sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow: hidden;
-        }
-        
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        #controls {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-width: 280px;
-            backdrop-filter: blur(10px);
-        }
-        
-        #controls h2 {
-            margin: 0 0 20px 0;
+            min-height: 100vh;
             color: #333;
-            font-size: 18px;
-            font-weight: 600;
         }
-        
-        .control-group {
-            margin-bottom: 20px;
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        
-        .control-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-            font-size: 14px;
-        }
-        
-        #fileInput {
-            display: none;
-        }
-        
-        #fileLabel {
-            display: block;
-            padding: 15px;
-            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-            border: 2px dashed #667eea;
-            border-radius: 10px;
+
+        .header {
             text-align: center;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-            font-weight: 500;
+            margin-bottom: 30px;
+            color: white;
         }
-        
-        #fileLabel:hover {
-            border-color: #5a6fd8;
-            background: linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%);
-            transform: translateY(-2px);
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
         }
-        
-        .splat-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 10px;
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scene-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .scene-card {
             background: white;
-        }
-        
-        .splat-item {
-            padding: 12px;
-            margin: 5px 0;
-            background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 15px;
+            padding: 20px;
             cursor: pointer;
-            border-left: 4px solid #667eea;
             transition: all 0.3s ease;
-            font-size: 14px;
+            border: 2px solid transparent;
+            text-align: center;
         }
-        
-        .splat-item:hover {
-            background: #e8ecff;
-            transform: translateX(5px);
+
+        .scene-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-        
-        .splat-item.active {
+
+        .scene-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+        }
+
+        .scene-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .scene-card h4 {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .scene-card p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .objects-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .object-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .object-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .object-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+        }
+
+        .object-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .object-card h4 {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
             background: linear-gradient(135deg, #667eea 0%, #5a6fd8 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
         }
-        
-        #info {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            z-index: 1000;
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .display-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
         }
-        
-        #loading {
+
+        .display-section {
+            margin-bottom: 30px;
+        }
+
+        .display-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-viewer {
+            width: 100%;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .video-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .video-container h4 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .video-container video {
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+        }
+
+        .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 20px 30px;
-            border-radius: 15px;
+            font-size: 1.1rem;
             z-index: 1000;
-            display: none;
-            backdrop-filter: blur(10px);
         }
-        
+
         .spinner {
             display: inline-block;
             width: 20px;
@@ -141,86 +253,146 @@
             animation: spin 1s ease-in-out infinite;
             margin-right: 10px;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        #instructions {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
+
+        .placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #666;
+            font-size: 1.1rem;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px dashed #ddd;
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
             padding: 15px;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 0.9rem;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
             z-index: 1000;
             backdrop-filter: blur(10px);
-            max-width: 250px;
         }
-        
-        #instructions h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-            font-size: 16px;
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
         }
-        
-        #instructions ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #666;
-        }
-        
-        #instructions li {
-            margin: 5px 0;
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .scene-grid,
+            .objects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .videos-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div id="controls">
-            <h2>3D Gaussian Splatting Viewer</h2>
-            
-            <div class="control-group">
-                <label for="fileInput">选择 .splat 文件:</label>
-                <input type="file" id="fileInput" accept=".splat" multiple>
-                <label for="fileInput" id="fileLabel">📁 点击选择文件或拖拽到此处</label>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 自动驾驶场景三维编辑器</h1>
+            <p>VDIG - 3D Gaussian场景编辑与可视化</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <!-- 场景选择 -->
+                <div class="section">
+                    <h3>🎯 场景选择</h3>
+                    <div class="scene-grid">
+                        <div class="scene-card" data-scene="scene_01">
+                            <img src="./scenes/scene_002.png" alt="场景1">
+                            <h4>场景 01</h4>
+                            <p>城市道路场景</p>
+                        </div>
+                        <div class="scene-card" data-scene="scene_02">
+                            <img src="./scenes/scene_001.png" alt="场景2">
+                            <h4>场景 02</h4>
+                            <p>高速公路场景</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 物体选择 -->
+                <div class="section">
+                    <h3>🎯 物体选择</h3>
+                    <div class="objects-grid" id="objectsGrid">
+                        <!-- 物体卡片将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 生成按钮 -->
+                <button class="generate-btn" id="generateBtn" disabled>
+                    🎬 生成3D场景
+                </button>
             </div>
-            
-            <div class="control-group">
-                <label>预设模型:</label>
-                <div class="splat-list" id="splatList">
-                    <div class="splat-item" data-file="bonsai-7k-mini.splat">🌸 Bonsai (7K)</div>
-                    <div class="splat-item" data-file="test.splat">🧪 Test Model</div>
-                    <div class="splat-item" data-file="origin.splat">🎯 Origin Model</div>
-                    <div class="splat-item" data-file="rotation.splat">🔄 Rotation Model</div>
-                    <div class="splat-item" data-file="r2.splat">⚡ R2 Model</div>
-                    <div class="splat-item" data-file="benz.splat">🚗 Benz Model</div>
-                    <div class="splat-item" data-file="motor_benz.splat">🏍️ Motor Benz</div>
-                    <div class="splat-item" data-file="motor2.splat">🏍️ Motor 2</div>
-                    <div class="splat-item" data-file="point_cloud.splat">☁️ Point Cloud</div>
+
+            <!-- 展示面板 -->
+            <div class="display-panel">
+                <!-- 3D模型展示 -->
+                <div class="display-section">
+                    <h3>📊 3D Gaussian模型</h3>
+                    <div class="model-viewer" id="modelViewer">
+                        <div class="placeholder">
+                            <div>
+                                <div style="font-size: 3rem; margin-bottom: 15px;">🎮</div>
+                                请选择场景和物体，然后点击"生成3D场景"按钮
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 视频展示 -->
+                <div class="display-section">
+                    <h3>📹 多角度渲染视频</h3>
+                    <div class="videos-grid">
+                        <div class="video-container">
+                            <h4>前视角</h4>
+                            <video id="videoFront" controls>
+                                <source src="" type="video/mp4">
+                                您的浏览器不支持视频播放。
+                            </video>
+                        </div>
+                        <div class="video-container">
+                            <h4>左前视角</h4>
+                            <video id="videoLeft" controls>
+                                <source src="" type="video/mp4">
+                                您的浏览器不支持视频播放。
+                            </video>
+                        </div>
+                        <div class="video-container">
+                            <h4>右前视角</h4>
+                            <video id="videoRight" controls>
+                                <source src="" type="video/mp4">
+                                您的浏览器不支持视频播放。
+                            </video>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div id="instructions">
-            <h3>操作说明</h3>
-            <ul>
-                <li>🖱️ 鼠标拖拽：旋转视角</li>
-                <li>🔍 滚轮：缩放</li>
-                <li>📱 支持触摸操作</li>
-            </ul>
-        </div>
-        
-        <div id="info">
-            <div>当前模型: <span id="currentModel">无</span></div>
-            <div>FPS: <span id="fps">0</span></div>
-            <div>顶点数: <span id="vertexCount">0</span></div>
-        </div>
-        
-        <div id="loading">
-            <span class="spinner"></span>
-            正在加载模型，请稍候...
         </div>
     </div>
 
@@ -232,124 +404,167 @@
             }
         }
     </script>
-    
+
     <script type="module">
         import * as THREE from "three";
         import { SplatMesh } from "@sparkjsdev/spark";
 
-        // 场景设置
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000000);
-        
-        // 相机设置
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 5);
-        
-        // 渲染器设置
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.getElementById('container').appendChild(renderer.domElement);
-        
-        // 添加环境光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        // 添加方向光
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 10, 5);
-        scene.add(directionalLight);
-        
-        // 变量
+        // 数据映射
+        const videoMap = {
+            'scene_02': {
+                'bike': [
+                    { name: "FRONT_LEFT", path: "./videos/001_bike_fl.mp4" },
+                    { name: "FRONT", path: "./videos/001_bike_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/001_bike_fr.mp4" }
+                ],
+                'car_audi': [
+                    { name: "FRONT_LEFT", path: "./videos/001_car_fl.mp4" },
+                    { name: "FRONT", path: "./videos/001_car_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/001_car_fr.mp4" }
+                ],
+                'bike,car_audi': [
+                    { name: "FRONT_LEFT", path: "./videos/001_bike_car_fl.mp4" },
+                    { name: "FRONT", path: "./videos/001_bike_car_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/001_bike_car_fr.mp4" }
+                ]
+            },
+            'scene_01': {
+                'motor': [
+                    { name: "FRONT_LEFT", path: "./videos/002_motor_fl.mp4" },
+                    { name: "FRONT", path: "./videos/002_motor_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/002_motor_bl.mp4" }
+                ],
+                'car_benz': [
+                    { name: "FRONT_LEFT", path: "./videos/002_car_fl.mp4" },
+                    { name: "FRONT", path: "./videos/002_car_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/002_car_bl.mp4" }
+                ],
+                'motor,car_benz': [
+                    { name: "FRONT_LEFT", path: "./videos/002_motor_benz_fl.mp4" },
+                    { name: "FRONT", path: "./videos/002_motor_benz_f.mp4" },
+                    { name: "FRONT_RIGHT", path: "./videos/002_motor_benz_bl.mp4" }
+                ]
+            }
+        };
+
+        const modelMap = {
+            'scene_01': {
+                'motor': './splats/motor_scene2.splat',
+                'car_benz': './splats/benz_scene2.splat',
+                'motor,car_benz': './splats/motor_benz_scene2.splat'
+            },
+            'scene_02': {
+                'bike': './splats/bike_scene1.splat',
+                'car_audi': './splats/audi_scene1.splat',
+                'bike,car_audi': './splats/audi_bike_scene1.splat'
+            }
+        };
+
+        const objectImages = {
+            "bike": "./objs/bike.png",
+            "car_audi": "./objs/car_audi.png",
+            "motor": "./objs/motor.png",
+            "car_benz": "./objs/car_benz.png"
+        };
+
+        const sceneObjects = {
+            "scene_01": ["motor", "car_benz"],
+            "scene_02": ["bike", "car_audi"]
+        };
+
+        // 状态变量
+        let selectedScene = null;
+        let selectedObjects = [];
         let currentSplat = null;
-        let frameCount = 0;
-        let lastTime = 0;
-        let fps = 0;
-        
+        let scene, camera, renderer;
+
         // DOM 元素
-        const fileInput = document.getElementById('fileInput');
-        const fileLabel = document.getElementById('fileLabel');
-        const splatList = document.getElementById('splatList');
-        const loading = document.getElementById('loading');
-        const currentModelSpan = document.getElementById('currentModel');
-        const fpsSpan = document.getElementById('fps');
-        const vertexCountSpan = document.getElementById('vertexCount');
-        
-        // 文件拖拽功能
-        fileLabel.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileLabel.style.borderColor = '#5a6fd8';
-            fileLabel.style.background = 'linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%)';
-        });
-        
-        fileLabel.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            fileLabel.style.borderColor = '#667eea';
-            fileLabel.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%)';
-        });
-        
-        fileLabel.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileLabel.style.borderColor = '#667eea';
-            fileLabel.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%)';
+        const sceneCards = document.querySelectorAll('.scene-card');
+        const objectsGrid = document.getElementById('objectsGrid');
+        const generateBtn = document.getElementById('generateBtn');
+        const modelViewer = document.getElementById('modelViewer');
+        const videoFront = document.getElementById('videoFront');
+        const videoLeft = document.getElementById('videoLeft');
+        const videoRight = document.getElementById('videoRight');
+
+        // 初始化Three.js场景
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
             
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                loadSplatFile(files[0]);
-            }
-        });
-        
-        // 文件选择
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                loadSplatFile(e.target.files[0]);
-            }
-        });
-        
-        // 预设模型点击
-        splatList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('splat-item')) {
-                // 移除之前的active类
-                document.querySelectorAll('.splat-item').forEach(item => {
-                    item.classList.remove('active');
+            camera = new THREE.PerspectiveCamera(60, modelViewer.clientWidth / modelViewer.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(modelViewer.clientWidth, modelViewer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            scene.add(directionalLight);
+        }
+
+        // 更新物体选择选项
+        function updateObjectsChoices(scene) {
+            objectsGrid.innerHTML = '';
+            selectedObjects = [];
+            
+            if (!scene) return;
+            
+            const objects = sceneObjects[scene] || [];
+            objects.forEach(obj => {
+                const card = document.createElement('div');
+                card.className = 'object-card';
+                card.dataset.object = obj;
+                card.innerHTML = `
+                    <img src="${objectImages[obj]}" alt="${obj}">
+                    <h4>${obj.replace('_', ' ').toUpperCase()}</h4>
+                `;
+                
+                card.addEventListener('click', () => {
+                    card.classList.toggle('selected');
+                    if (card.classList.contains('selected')) {
+                        selectedObjects.push(obj);
+                    } else {
+                        selectedObjects = selectedObjects.filter(o => o !== obj);
+                    }
+                    updateGenerateButton();
                 });
                 
-                // 添加active类到当前项
-                e.target.classList.add('active');
-                
-                const fileName = e.target.dataset.file;
-                loadSplatFileByName(fileName);
-            }
-        });
-        
-        // 加载splat文件
-        async function loadSplatFile(file) {
+                objectsGrid.appendChild(card);
+            });
+        }
+
+        // 更新生成按钮状态
+        function updateGenerateButton() {
+            generateBtn.disabled = !selectedScene || selectedObjects.length === 0;
+        }
+
+        // 加载3D模型
+        async function loadModel(modelPath) {
             try {
-                loading.style.display = 'block';
-                
-                // 移除之前的模型
+                // 清除之前的模型
                 if (currentSplat) {
                     scene.remove(currentSplat);
                 }
                 
-                // 创建文件URL
-                const fileURL = URL.createObjectURL(file);
+                // 显示加载状态
+                modelViewer.innerHTML = '<div class="loading"><span class="spinner"></span>正在加载3D模型...</div>';
                 
                 // 创建新的SplatMesh
-                currentSplat = new SplatMesh({ url: fileURL });
+                currentSplat = new SplatMesh({ url: modelPath });
                 currentSplat.position.set(0, 0, 0);
                 
                 // 添加到场景
                 scene.add(currentSplat);
                 
-                // 更新信息
-                currentModelSpan.textContent = file.name;
-                
                 // 自动调整相机位置
                 setTimeout(() => {
                     if (currentSplat && currentSplat.geometry) {
-                        vertexCountSpan.textContent = currentSplat.geometry.attributes.position.count.toLocaleString();
-                        
                         const box = new THREE.Box3().setFromObject(currentSplat);
                         const size = box.getSize(new THREE.Vector3());
                         const maxDim = Math.max(size.x, size.y, size.z);
@@ -359,125 +574,78 @@
                     }
                 }, 100);
                 
-                loading.style.display = 'none';
-                
             } catch (error) {
-                console.error('加载splat文件失败:', error);
-                loading.style.display = 'none';
-                alert('加载文件失败: ' + error.message);
+                console.error('加载3D模型失败:', error);
+                modelViewer.innerHTML = '<div class="placeholder">3D模型加载失败</div>';
             }
         }
-        
-        // 加载预设模型
-        async function loadSplatFileByName(fileName) {
-            try {
-                loading.style.display = 'block';
+
+        // 更新视频
+        function updateVideos(videos) {
+            if (videos && videos.length >= 3) {
+                videoFront.src = videos[0].path;
+                videoLeft.src = videos[1].path;
+                videoRight.src = videos[2].path;
                 
-                // 移除之前的模型
-                if (currentSplat) {
-                    scene.remove(currentSplat);
-                }
-                
-                // 创建新的SplatMesh
-                currentSplat = new SplatMesh({ url: fileName });
-                currentSplat.position.set(0, 0, 0);
-                
-                // 添加到场景
-                scene.add(currentSplat);
-                
-                // 更新信息
-                currentModelSpan.textContent = fileName;
-                
-                // 自动调整相机位置
-                setTimeout(() => {
-                    if (currentSplat && currentSplat.geometry) {
-                        vertexCountSpan.textContent = currentSplat.geometry.attributes.position.count.toLocaleString();
-                        
-                        const box = new THREE.Box3().setFromObject(currentSplat);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const distance = maxDim * 2;
-                        camera.position.set(distance, distance, distance);
-                        camera.lookAt(0, 0, 0);
-                    }
-                }, 100);
-                
-                loading.style.display = 'none';
-                
-            } catch (error) {
-                console.error('加载splat文件失败:', error);
-                loading.style.display = 'none';
-                alert('加载文件失败: ' + error.message);
+                // 重新加载视频
+                videoFront.load();
+                videoLeft.load();
+                videoRight.load();
             }
         }
-        
-        // 窗口大小调整
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // 生成场景
+        async function generateScene() {
+            if (!selectedScene || selectedObjects.length === 0) return;
+            
+            const objectKey = selectedObjects.sort().join(',');
+            
+            // 获取模型路径
+            const modelPath = modelMap[selectedScene]?.[objectKey];
+            if (modelPath) {
+                await loadModel(modelPath);
+            }
+            
+            // 获取视频
+            const videos = videoMap[selectedScene]?.[objectKey];
+            if (videos) {
+                updateVideos(videos);
+            }
+        }
+
+        // 事件监听器
+        sceneCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // 移除其他选中状态
+                sceneCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                
+                selectedScene = card.dataset.scene;
+                updateObjectsChoices(selectedScene);
+                updateGenerateButton();
+            });
         });
-        
+
+        generateBtn.addEventListener('click', generateScene);
+
         // 鼠标控制
         let isMouseDown = false;
         let mouseX = 0;
         let mouseY = 0;
-        
-        renderer.domElement.addEventListener('mousedown', (e) => {
+
+        modelViewer.addEventListener('mousedown', (e) => {
+            if (!renderer) return;
             isMouseDown = true;
             mouseX = e.clientX;
             mouseY = e.clientY;
         });
-        
-        renderer.domElement.addEventListener('mousemove', (e) => {
-            if (isMouseDown) {
-                const deltaX = e.clientX - mouseX;
-                const deltaY = e.clientY - mouseY;
-                
-                // 旋转相机
-                const spherical = new THREE.Spherical();
-                spherical.setFromVector3(camera.position);
-                spherical.theta -= deltaX * 0.01;
-                spherical.phi += deltaY * 0.01;
-                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-                
-                camera.position.setFromSpherical(spherical);
-                camera.lookAt(0, 0, 0);
-                
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-        
-        renderer.domElement.addEventListener('mouseup', () => {
-            isMouseDown = false;
-        });
-        
-        // 滚轮缩放
-        renderer.domElement.addEventListener('wheel', (e) => {
-            const zoomSpeed = 0.1;
-            const direction = e.deltaY > 0 ? 1 : -1;
-            camera.position.multiplyScalar(1 + direction * zoomSpeed);
-        });
-        
-        // 触摸控制
-        let touchStartX = 0;
-        let touchStartY = 0;
-        
-        renderer.domElement.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-        });
-        
-        renderer.domElement.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
+
+        modelViewer.addEventListener('mousemove', (e) => {
+            if (!isMouseDown || !renderer) return;
             
-            // 旋转相机
+            const deltaX = e.clientX - mouseX;
+            const deltaY = e.clientY - mouseY;
+            
             const spherical = new THREE.Spherical();
             spherical.setFromVector3(camera.position);
             spherical.theta -= deltaX * 0.01;
@@ -487,38 +655,42 @@
             camera.position.setFromSpherical(spherical);
             camera.lookAt(0, 0, 0);
             
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
         });
-        
+
+        modelViewer.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        // 滚轮缩放
+        modelViewer.addEventListener('wheel', (e) => {
+            if (!renderer) return;
+            const zoomSpeed = 0.1;
+            const direction = e.deltaY > 0 ? 1 : -1;
+            camera.position.multiplyScalar(1 + direction * zoomSpeed);
+        });
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            if (renderer && modelViewer) {
+                camera.aspect = modelViewer.clientWidth / modelViewer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(modelViewer.clientWidth, modelViewer.clientHeight);
+            }
+        });
+
         // 动画循环
-        function animate(time) {
+        function animate() {
             requestAnimationFrame(animate);
-            
-            // 计算FPS
-            frameCount++;
-            if (time - lastTime >= 1000) {
-                fps = Math.round((frameCount * 1000) / (time - lastTime));
-                fpsSpan.textContent = fps;
-                frameCount = 0;
-                lastTime = time;
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
             }
-            
-            renderer.render(scene, camera);
         }
-        
-        // 启动动画
-        animate(0);
-        
-        // 默认加载第一个模型
-        setTimeout(() => {
-            const firstItem = document.querySelector('.splat-item');
-            if (firstItem) {
-                firstItem.classList.add('active');
-                loadSplatFileByName(firstItem.dataset.file);
-            }
-        }, 100);
+
+        // 初始化
+        initThreeJS();
+        animate();
     </script>
 </body>
-</html>
 </html>
