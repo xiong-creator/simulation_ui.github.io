@@ -163,6 +163,6 @@ export class UIController {
 
     hideLoading() {
         this.elements.generateBtn.disabled = false;
-        this.elements.generateBtn.textContent = '�� 生成3D场景';
+        this.elements.generateBtn.textContent = '生成3D场景';
     }
 } 
