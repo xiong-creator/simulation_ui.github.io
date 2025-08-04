@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块化测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>模块化结构测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 数据模块测试</h3>
+            <button class="test-button" onclick="testDataModule()">测试数据模块</button>
+            <div id="data-log" class="log"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. UI控制器测试</h3>
+            <button class="test-button" onclick="testUIController()">测试UI控制器</button>
+            <div id="ui-log" class="log"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 视频播放器测试</h3>
+            <button class="test-button" onclick="testVideoPlayer()">测试视频播放器</button>
+            <div id="video-log" class="log"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 应用集成测试</h3>
+            <button class="test-button" onclick="testAppIntegration()">测试应用集成</button>
+            <div id="app-log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
+                "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.8/spark.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { videoMap, modelMap, sceneObjects, objectImages } from './js/data.js';
+        import { UIController } from './js/ui-controller.js';
+        import { VideoPlayer } from './js/video-player.js';
+        import { App } from './js/app.js';
+
+        window.testDataModule = function() {
+            const log = document.getElementById('data-log');
+            log.innerHTML = '';
+            
+            try {
+                log.innerHTML += '✅ 数据模块加载成功\n';
+                log.innerHTML += `📊 视频映射: ${Object.keys(videoMap).length} 个场景\n`;
+                log.innerHTML += `🎮 模型映射: ${Object.keys(modelMap).length} 个场景\n`;
+                log.innerHTML += `🏗️ 场景物体: ${Object.keys(sceneObjects).length} 个场景\n`;
+                log.innerHTML += `🖼️ 物体图片: ${Object.keys(objectImages).length} 个物体\n`;
+            } catch (error) {
+                log.innerHTML += `❌ 数据模块测试失败: ${error.message}\n`;
+            }
+        };
+
+        window.testUIController = function() {
+            const log = document.getElementById('ui-log');
+            log.innerHTML = '';
+            
+            try {
+                const uiController = new UIController();
+                log.innerHTML += '✅ UI控制器创建成功\n';
+                log.innerHTML += `🔧 初始化状态: ${uiController.isInitialized}\n`;
+                log.innerHTML += `🎯 选中场景: ${uiController.getSelectedScene() || '无'}\n`;
+                log.innerHTML += `📦 选中物体: ${uiController.getSelectedObjects().length} 个\n`;
+            } catch (error) {
+                log.innerHTML += `❌ UI控制器测试失败: ${error.message}\n`;
+            }
+        };
+
+        window.testVideoPlayer = function() {
+            const log = document.getElementById('video-log');
+            log.innerHTML = '';
+            
+            try {
+                const videoPlayer = new VideoPlayer();
+                log.innerHTML += '✅ 视频播放器创建成功\n';
+                log.innerHTML += `🔧 初始化状态: ${videoPlayer.isInitialized}\n`;
+                log.innerHTML += `📹 视频对象: ${Object.keys(videoPlayer.videos).length} 个\n`;
+            } catch (error) {
+                log.innerHTML += `❌ 视频播放器测试失败: ${error.message}\n`;
+            }
+        };
+
+        window.testAppIntegration = function() {
+            const log = document.getElementById('app-log');
+            log.innerHTML = '';
+            
+            try {
+                const app = new App();
+                log.innerHTML += '✅ 应用程序创建成功\n';
+                log.innerHTML += `🔧 初始化状态: ${app.isInitialized}\n`;
+                log.innerHTML += `🎮 3D查看器: ${app.threeViewer ? '已创建' : '未创建'}\n`;
+                log.innerHTML += `📹 视频播放器: ${app.videoPlayer ? '已创建' : '未创建'}\n`;
+                log.innerHTML += `🎯 UI控制器: ${app.uiController ? '已创建' : '未创建'}\n`;
+            } catch (error) {
+                log.innerHTML += `❌ 应用集成测试失败: ${error.message}\n`;
+            }
+        };
+
+        // 页面加载完成后自动运行所有测试
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('模块化测试页面加载完成');
+            setTimeout(() => {
+                testDataModule();
+                testUIController();
+                testVideoPlayer();
+                testAppIntegration();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 
